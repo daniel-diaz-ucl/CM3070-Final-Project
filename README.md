@@ -1,8 +1,8 @@
 # CM3070 Final Project
 
-This is the final project for the CM3070 module. The project is a fake news detector, proposed within the scope of Natural Language Processing (NLP) techniques and theory. The project utilizes Jupyter notebooks for exploratory data analysis, visualization, and presenting results. The actual code for data processing, feature engineering, model training, etc., is refactored into Python scripts which are then imported into the notebooks. This project also includes unit tests for the Python scripts to ensure code reliability and correctness, following the best practices of data scientists and NLP professionals.
+This is the code repository for the CM3070 Final Project module. The project is a fake news detector, proposed within the scope of Natural Language Processing (NLP) techniques and theory. The project utilizes Jupyter notebooks for exploratory data analysis, visualization, and presenting results. The actual code for data processing, feature engineering, model training, etc., is refactored into Python scripts which are then imported into the notebooks. This project also includes unit tests for the Python scripts to ensure code reliability and correctness, following the best practices of data scientists and NLP professionals.
 
-## Structure
+## Structure of the repository
 
 ```
 CM3070-Final-Project
