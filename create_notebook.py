@@ -1,5 +1,7 @@
 import sys
+
 import nbformat as nbf
+
 
 def create_notebook(filename):
     """
