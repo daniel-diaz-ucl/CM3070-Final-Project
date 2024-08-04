@@ -1,0 +1,13 @@
+Accuracy: 0.9212330301536807
+Precision: 0.9220063611694641
+Recall: 0.9212330301536807
+F1 Score: 0.9211282442387736
+
+4 epoch
+375.61188118718565 val loss
+token=512 (max possible)
+16 batch size
+lr=1e-5
+weight_decay=default (to check, maybe 0 or close 0.0001)
+
+bert-base-uncased model 12 layer
