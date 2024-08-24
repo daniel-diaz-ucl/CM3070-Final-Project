@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import seaborn as sns
 import torch
 from sklearn.metrics import (accuracy_score, confusion_matrix,
@@ -9,6 +10,8 @@ from torch.utils.data import DataLoader, Dataset
 from transformers import (BertForSequenceClassification, BertTokenizer,
                           Trainer, TrainingArguments)
 
+# Load the processed dataframe
+df = pd.read_csv('processed_tweets_dataset.csv')
 
 # Define the TweetDataset class
 class TweetDataset(Dataset):
