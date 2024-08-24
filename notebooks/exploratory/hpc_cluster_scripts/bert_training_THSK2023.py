@@ -43,8 +43,8 @@ class TweetDataset(Dataset):
             'labels': torch.tensor(label, dtype=torch.long)
         }
 
-# Load pre-trained model and tokenizer
-model_name = 'bert-base-uncased'
+# Load pre-trained model and tokenizer from local directory
+model_name = './local_directory/bert-base-uncased'
 tokenizer = BertTokenizer.from_pretrained(model_name)
 model = BertForSequenceClassification.from_pretrained(model_name)
 
