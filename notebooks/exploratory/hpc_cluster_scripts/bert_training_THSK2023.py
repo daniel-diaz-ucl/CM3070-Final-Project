@@ -50,7 +50,7 @@ class TweetDataset(Dataset):
         }
 
 # Load pre-trained model and tokenizer from local directory
-model_name = './local_directory/bert-base-uncased'
+model_name = './bert-base-uncased'
 tokenizer = BertTokenizer.from_pretrained(model_name)
 model = BertForSequenceClassification.from_pretrained(model_name)
 
@@ -63,7 +63,7 @@ def preprocess(tweet):
     return tokenizer.encode_plus(
         tweet,
         add_special_tokens=True,
-        max_length=128,  # Adjust as needed
+        max_length=512,  # Adjust as needed
         padding='max_length',
         truncation=True,
         return_attention_mask=True,
@@ -85,21 +85,21 @@ train_dataset = TweetDataset(
     tweets=X_train,
     labels=y_train,
     tokenizer=tokenizer,
-    max_len=128  # Adjust as needed
+    max_len=512  # Adjust as needed
 )
 
 val_dataset = TweetDataset(
     tweets=X_val,
     labels=y_val,
     tokenizer=tokenizer,
-    max_len=128  # Adjust as needed
+    max_len=512  # Adjust as needed
 )
 
 test_dataset = TweetDataset(
     tweets=X_test,
     labels=y_test,
     tokenizer=tokenizer,
-    max_len=128  # Adjust as needed
+    max_len=512  # Adjust as needed
 )
 
 # Training arguments
