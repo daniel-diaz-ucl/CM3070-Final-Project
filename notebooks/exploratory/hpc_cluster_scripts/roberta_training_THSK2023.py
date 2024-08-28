@@ -39,8 +39,8 @@ class TweetDataset(Dataset):
             return_tensors='pt',
         )
 
-        input_ids = encoding['input_ids'].view(-1)
-        attention_mask = encoding['attention_mask'].view(-1)
+        input_ids = encoding['input_ids'].squeeze()
+        attention_mask = encoding['attention_mask'].squeeze()
 
         return {
             'tweet_text': tweet,
@@ -60,7 +60,7 @@ model = model.to(device)
 
 # Preprocess the tweets
 def preprocess(tweet):
-    return tokenizer.encode_plus(
+    encoding = tokenizer.encode_plus(
         tweet,
         add_special_tokens=True,
         max_length=512,  # Adjust as needed
@@ -69,9 +69,10 @@ def preprocess(tweet):
         return_attention_mask=True,
         return_tensors='pt',
     )
+    return encoding['input_ids'].squeeze(), encoding['attention_mask'].squeeze()
 
 # Apply preprocessing to the entire dataset
-X = [preprocess(tweet) for tweet in df['tweet']]
+X = df['tweet'].apply(preprocess)
 y = df['BinaryNumLabel'].tolist()
 
 # Split the data into training+validation and testing sets
@@ -82,21 +83,21 @@ X_train, X_val, y_train, y_val = train_test_split(X_temp, y_temp, test_size=0.25
 
 # Create the TweetDataset
 train_dataset = TweetDataset(
-    tweets=X_train,
+    tweets=X_train.tolist(),
     labels=y_train,
     tokenizer=tokenizer,
     max_len=512  # Adjust as needed
 )
 
 val_dataset = TweetDataset(
-    tweets=X_val,
+    tweets=X_val.tolist(),
     labels=y_val,
     tokenizer=tokenizer,
     max_len=512  # Adjust as needed
 )
 
 test_dataset = TweetDataset(
-    tweets=X_test,
+    tweets=X_test.tolist(),
     labels=y_test,
     tokenizer=tokenizer,
     max_len=512  # Adjust as needed
@@ -149,7 +150,8 @@ model.save_pretrained('./best_model')
 tokenizer.save_pretrained('./best_model')
 
 # Plot loss
-plt.plot(trainer.state.log_history)
+loss_values = [log['loss'] for log in trainer.state.log_history if 'loss' in log]
+plt.plot(loss_values)
 plt.xlabel('Epoch')
 plt.ylabel('Loss')
 plt.title('Training Loss')
