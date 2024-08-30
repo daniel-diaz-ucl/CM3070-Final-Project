@@ -11,8 +11,20 @@ from transformers import (BertForSequenceClassification, BertTokenizer,
                           EarlyStoppingCallback, Trainer, TrainingArguments)
 
 # Load the processed dataframe
-#df = pd.read_csv('processed_tweets_dataset.csv')
 df = pd.read_pickle('processed_tweets_dataset.pkl')
+
+hyperparameters = {
+    'model_name': 'bert-large-uncased',
+    'max_len': 512,
+    'num_train_epochs': 10,
+    'per_device_train_batch_size': 32,
+    'per_device_eval_batch_size': 32,
+    'learning_rate': 1e-5,
+    'weight_decay': 0.0,
+    'early_stopping_patience': 3,
+}
+
+para_info = f"{hyperparameters['model_name']}_tls{hyperparameters['max_len']}_bs{hyperparameters['per_device_train_batch_size']}"
 
 # Define the TweetDataset class
 class TweetDataset(Dataset):
@@ -51,7 +63,7 @@ class TweetDataset(Dataset):
         }
 
 # Load pre-trained model and tokenizer from local directory
-model_name = './bert-large-uncased'
+model_name = f'./{hyperparameters["model_name"]}'
 tokenizer = BertTokenizer.from_pretrained(model_name)
 model = BertForSequenceClassification.from_pretrained(model_name)
 
@@ -64,7 +76,7 @@ def preprocess(tweet):
     encoding = tokenizer.encode_plus(
         tweet,
         add_special_tokens=True,
-        max_length=512,  # Adjust as needed
+        max_length=hyperparameters['max_len'],
         padding='max_length',
         truncation=True,
         return_attention_mask=True,
@@ -87,49 +99,60 @@ train_dataset = TweetDataset(
     tweets=X_train.tolist(),
     labels=y_train,
     tokenizer=tokenizer,
-    max_len=512  # Adjust as needed
+    max_len=hyperparameters['max_len']
 )
 
 val_dataset = TweetDataset(
     tweets=X_val.tolist(),
     labels=y_val,
     tokenizer=tokenizer,
-    max_len=512  # Adjust as needed
+    max_len=hyperparameters['max_len']
 )
 
 test_dataset = TweetDataset(
     tweets=X_test.tolist(),
     labels=y_test,
     tokenizer=tokenizer,
-    max_len=512  # Adjust as needed
+    max_len=hyperparameters['max_len']
 )
 
 # Training arguments
 training_args = TrainingArguments(
-    output_dir='./results',
-    num_train_epochs=10,
-    per_device_train_batch_size=32,  # Adjust as needed
-    per_device_eval_batch_size=32,  # Adjust as needed
+    output_dir=f'./results_{para_info}',
+    num_train_epochs=hyperparameters['num_train_epochs'],
+    per_device_train_batch_size=hyperparameters['per_device_train_batch_size'],
+    per_device_eval_batch_size=hyperparameters['per_device_eval_batch_size'],
     evaluation_strategy='epoch',
     save_strategy='epoch',
-    logging_dir='./logs',
-    learning_rate=1e-5,
-    weight_decay=0.0,
+    logging_dir=f'./logs_{para_info}',
+    learning_rate=hyperparameters['learning_rate'],
+    weight_decay=hyperparameters['weight_decay'],
     load_best_model_at_end=True,
-    metric_for_best_model='accuracy',
-    greater_is_better=True,
+    metric_for_best_model='eval_loss',  # Monitor validation loss
+    greater_is_better=False,  # Lower loss is better
 )
 
 # Compute metrics
+metrics = []
+
 def compute_metrics(p):
     preds = np.argmax(p.predictions, axis=1)
     precision, recall, f1, _ = precision_recall_fscore_support(p.label_ids, preds, average='binary')
     acc = accuracy_score(p.label_ids, preds)
+    metrics.append({
+        'epoch': trainer.state.epoch,
+        'accuracy': acc,
+        'precision': precision,
+        'recall': recall,
+        'f1': f1,
+        'eval_loss': p.metrics['eval_loss'],
+    })
     return {
         'accuracy': acc,
         'precision': precision,
         'recall': recall,
         'f1': f1,
+        'eval_loss': p.metrics['eval_loss'],
     }
 
 # Trainer
@@ -139,24 +162,32 @@ trainer = Trainer(
     train_dataset=train_dataset,
     eval_dataset=val_dataset,
     compute_metrics=compute_metrics,
-    callbacks=[EarlyStoppingCallback(early_stopping_patience=3)],
+    callbacks=[EarlyStoppingCallback(early_stopping_patience=hyperparameters['early_stopping_patience'])],
 )
 
 # Train and evaluate
 trainer.train()
 trainer.evaluate()
 
+# Save metrics to a CSV file
+df_metrics = pd.DataFrame(metrics)
+df_metrics.to_csv(f'training_metrics_{para_info}.csv', index=False)
+
 # Save model
-model.save_pretrained('./best_model')
-tokenizer.save_pretrained('./best_model')
+model.save_pretrained(f'./best_model_{para_info}')
+tokenizer.save_pretrained(f'./best_model_{para_info}')
 
 # Plot loss
 loss_values = [log['loss'] for log in trainer.state.log_history if 'loss' in log]
-plt.plot(loss_values)
+epochs = range(1, len(loss_values) + 1)
+
+plt.plot(epochs, loss_values, 'b', label='Training loss')
 plt.xlabel('Epoch')
 plt.ylabel('Loss')
 plt.title('Training Loss')
-plt.savefig('training_loss.png')
+plt.xticks(epochs)  # Set x-ticks to single digits
+plt.legend()
+plt.savefig(f'training_loss_{para_info}.png')
 
 # Heatmap
 def plot_heatmap(y_true, y_pred):
@@ -165,7 +196,7 @@ def plot_heatmap(y_true, y_pred):
     plt.xlabel('Predicted')
     plt.ylabel('True')
     plt.title('Confusion Matrix')
-    plt.savefig('confusion_matrix.png')
+    plt.savefig(f'confusion_matrix_{para_info}.png')
 
 # Evaluate on test set
 predictions = trainer.predict(test_dataset)
