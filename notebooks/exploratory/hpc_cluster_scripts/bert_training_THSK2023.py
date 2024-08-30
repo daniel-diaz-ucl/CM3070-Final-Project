@@ -6,12 +6,13 @@ import torch
 from sklearn.metrics import (accuracy_score, confusion_matrix,
                              precision_recall_fscore_support)
 from sklearn.model_selection import train_test_split
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import Dataset
 from transformers import (BertForSequenceClassification, BertTokenizer,
-                          Trainer, TrainingArguments)
+                          EarlyStoppingCallback, Trainer, TrainingArguments)
 
 # Load the processed dataframe
-df = pd.read_csv('processed_tweets_dataset.csv')
+#df = pd.read_csv('processed_tweets_dataset.csv')
+df = pd.read_pickle('processed_tweets_dataset.pkl')
 
 # Define the TweetDataset class
 class TweetDataset(Dataset):
@@ -117,7 +118,6 @@ training_args = TrainingArguments(
     load_best_model_at_end=True,
     metric_for_best_model='accuracy',
     greater_is_better=True,
-    early_stopping_patience=3
 )
 
 # Compute metrics
@@ -138,7 +138,8 @@ trainer = Trainer(
     args=training_args,
     train_dataset=train_dataset,
     eval_dataset=val_dataset,
-    compute_metrics=compute_metrics
+    compute_metrics=compute_metrics,
+    callbacks=[EarlyStoppingCallback(early_stopping_patience=3)],
 )
 
 # Train and evaluate

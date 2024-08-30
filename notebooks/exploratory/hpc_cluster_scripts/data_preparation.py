@@ -28,4 +28,7 @@ df['categorical_label'] = df.apply(calculate_categorical_label, axis=1)
 df['BinaryNumLabel'] = df['categorical_label'].apply(lambda x: 1.0 if x == True else 0.0)
 
 # Save the dataframe
-df.to_csv('processed_tweets_dataset.csv', index=False)
+#df.to_csv('processed_tweets_dataset.csv', index=False)
+
+# Save the dataframe as a Pickle file
+df.to_pickle('processed_tweets_dataset.pkl')
