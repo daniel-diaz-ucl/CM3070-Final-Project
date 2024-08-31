@@ -17,11 +17,12 @@ hyperparameters = {
     'model_name': 'bert-large-uncased',
     'max_len': 512,
     'num_train_epochs': 10,
-    'per_device_train_batch_size': 32,
+    'per_device_train_batch_size': 16,  # Reduced batch size
     'per_device_eval_batch_size': 32,
     'learning_rate': 1e-5,
     'weight_decay': 0.0,
     'early_stopping_patience': 3,
+    'gradient_accumulation_steps': 2,  # Gradient accumulation
 }
 
 para_info = f"{hyperparameters['model_name']}_tls{hyperparameters['max_len']}_bs{hyperparameters['per_device_train_batch_size']}"
@@ -57,9 +58,9 @@ class TweetDataset(Dataset):
 
         return {
             'tweet_text': tweet,
-            'input_ids': input_ids,
-            'attention_mask': attention_mask,
-            'labels': torch.tensor(label, dtype=torch.long)
+            'input_ids': input_ids.to(device),  # Move to device
+            'attention_mask': attention_mask.to(device),  # Move to device
+            'labels': torch.tensor(label, dtype=torch.long).to(device)  # Move to device
         }
 
 # Load pre-trained model and tokenizer from local directory
@@ -122,7 +123,7 @@ training_args = TrainingArguments(
     num_train_epochs=hyperparameters['num_train_epochs'],
     per_device_train_batch_size=hyperparameters['per_device_train_batch_size'],
     per_device_eval_batch_size=hyperparameters['per_device_eval_batch_size'],
-    evaluation_strategy='epoch',
+    eval_strategy='epoch',
     save_strategy='epoch',
     logging_dir=f'./logs_{para_info}',
     learning_rate=hyperparameters['learning_rate'],
@@ -130,22 +131,26 @@ training_args = TrainingArguments(
     load_best_model_at_end=True,
     metric_for_best_model='eval_loss',  # Monitor validation loss
     greater_is_better=False,  # Lower loss is better
+    gradient_accumulation_steps=hyperparameters['gradient_accumulation_steps'],  # Gradient accumulation
+    fp16=True,  # Enable mixed precision training
 )
 
 # Compute metrics
 metrics = []
 
-def compute_metrics(p):
+def compute_metrics(p, eval=True):
     preds = np.argmax(p.predictions, axis=1)
     precision, recall, f1, _ = precision_recall_fscore_support(p.label_ids, preds, average='binary')
     acc = accuracy_score(p.label_ids, preds)
-    metrics.append({
-        'epoch': trainer.state.epoch,
-        'accuracy': acc,
-        'precision': precision,
-        'recall': recall,
-        'f1': f1,
-    })
+    if eval:
+        metrics.append({
+            'epoch': trainer.state.epoch,
+            'accuracy': acc,
+            'precision': precision,
+            'recall': recall,
+            'f1': f1,
+        })
+
     return {
         'accuracy': acc,
         'precision': precision,
@@ -167,7 +172,7 @@ trainer = Trainer(
 trainer.train()
 trainer.evaluate()
 
-# Save metrics to a CSV file
+# Save training metrics to a CSV file
 df_metrics = pd.DataFrame(metrics)
 df_metrics.to_csv(f'training_metrics_{para_info}.csv', index=False)
 
@@ -175,17 +180,18 @@ df_metrics.to_csv(f'training_metrics_{para_info}.csv', index=False)
 model.save_pretrained(f'./best_model_{para_info}')
 tokenizer.save_pretrained(f'./best_model_{para_info}')
 
-# Plot loss
-loss_values = [log['loss'] for log in trainer.state.log_history if 'loss' in log]
-epochs = range(1, len(loss_values) + 1)
+# Extract validation loss and corresponding epochs
+val_loss_values = [log['eval_loss'] for log in trainer.state.log_history if 'eval_loss' in log]
+epochs = [log['epoch'] for log in trainer.state.log_history if 'eval_loss' in log]
 
-plt.plot(epochs, loss_values, 'b', label='Training loss')
+# Plot validation loss over epochs
+plt.plot(epochs, val_loss_values, 'b', label='Validation loss')
 plt.xlabel('Epoch')
 plt.ylabel('Loss')
-plt.title('Training Loss')
+plt.title(f'Validation Loss Over Epochs ({para_info})')
 plt.xticks(epochs)  # Set x-ticks to single digits
 plt.legend()
-plt.savefig(f'training_loss_{para_info}.png')
+plt.savefig(f'validation_loss_{para_info}.png')
 
 # Heatmap
 def plot_heatmap(y_true, y_pred):
@@ -193,11 +199,16 @@ def plot_heatmap(y_true, y_pred):
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
     plt.xlabel('Predicted')
     plt.ylabel('True')
-    plt.title('Confusion Matrix')
+    plt.title(f'Confusion Matrix ({para_info})')
     plt.savefig(f'confusion_matrix_{para_info}.png')
 
-# Evaluate on test set
+# Plot confusion matrix for test set
 predictions = trainer.predict(test_dataset)
 y_true = predictions.label_ids
 y_pred = np.argmax(predictions.predictions, axis=1)
 plot_heatmap(y_true, y_pred)
+
+# Save test metrics to a CSV file
+test_metrics = compute_metrics(predictions, eval=False)
+df_metrics = pd.DataFrame([test_metrics])
+df_metrics.to_csv(f'test_metrics_{para_info}.csv', index=False)
