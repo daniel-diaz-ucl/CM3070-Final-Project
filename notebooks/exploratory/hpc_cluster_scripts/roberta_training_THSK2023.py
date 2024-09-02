@@ -57,9 +57,9 @@ class TweetDataset(Dataset):
 
         return {
             'tweet_text': tweet,
-            'input_ids': input_ids.to(device),  # Move to device
-            'attention_mask': attention_mask.to(device),  # Move to device
-            'labels': torch.tensor(label, dtype=torch.long).to(device)  # Move to device
+            'input_ids': input_ids,
+            'attention_mask': attention_mask,
+            'labels': torch.tensor(label, dtype=torch.long)
         }
 
 # Load pre-trained model and tokenizer from local directory
