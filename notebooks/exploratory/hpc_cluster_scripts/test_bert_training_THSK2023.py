@@ -15,13 +15,14 @@ df = pd.read_pickle('processed_tweets_dataset.pkl')
 
 hyperparameters = {
     'model_name': 'bert-base-uncased',
-    'max_len': 256,
+    'max_len': 512,
     'num_train_epochs': 10,
-    'per_device_train_batch_size': 32,
+    'per_device_train_batch_size': 16,
     'per_device_eval_batch_size': 32,
     'learning_rate': 1e-5,
     'weight_decay': 0.0,
     'early_stopping_patience': 3,
+    'gradient_accumulation_steps': 2,  # Gradient accumulation
 }
 
 para_info = f"{hyperparameters['model_name']}_tls{hyperparameters['max_len']}_bs{hyperparameters['per_device_train_batch_size']}"
@@ -57,9 +58,9 @@ class TweetDataset(Dataset):
 
         return {
             'tweet_text': tweet,
-            'input_ids': input_ids.to(device),  # Move to device
-            'attention_mask': attention_mask.to(device),  # Move to device
-            'labels': torch.tensor(label, dtype=torch.long).to(device)  # Move to device
+            'input_ids': input_ids,
+            'attention_mask': attention_mask,
+            'labels': torch.tensor(label, dtype=torch.long)
         }
 
 # Load pre-trained model and tokenizer from local directory
@@ -130,6 +131,7 @@ training_args = TrainingArguments(
     load_best_model_at_end=True,
     metric_for_best_model='eval_loss',  # Monitor validation loss
     greater_is_better=False,  # Lower loss is better
+    gradient_accumulation_steps=hyperparameters['gradient_accumulation_steps'],  # Gradient accumulation
 )
 
 # Compute metrics
