@@ -1,7 +1,7 @@
 import pandas as pd
 
 # Set the path to the dataset
-dataset_path = '../../../datasets/TruthSeeker2023/Truth_Seeker_Model_Dataset.csv'
+dataset_path = '../../../../datasets/TruthSeeker2023/Truth_Seeker_Model_Dataset.csv'
 
 # Load the dataset into a pandas dataframe, ensuring the header is inferred from the first row
 df = pd.read_csv(dataset_path, header=0)
