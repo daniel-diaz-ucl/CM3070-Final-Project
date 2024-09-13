@@ -1,5 +1,5 @@
 #!/bin/bash -l
-#$ -N bert_large_training_fk_news_project
+#$ -N bertweet_training_fk_news_project
 #$ -l h_rt=24:00:00
 #$ -l mem=64G
 #$ -l tmpfs=15G
@@ -10,9 +10,9 @@
 #$ -m beas
 #$ -M daniel.diaz@ucl.ac.uk
 #$ -ac allow=LEF
-#$ -wd /home/ucjtfdd/Scratch/fk_news_project/bert_large
+#$ -wd /home/ucjtfdd/Scratch/fk_news_project/bertweet_base
 
-cd /home/ucjtfdd/Scratch/fk_news_project/bert_large
+cd /home/ucjtfdd/Scratch/fk_news_project/bertweet_base
 
 module -f unload compilers mpi gcc-libs
 module load beta-modules
@@ -24,7 +24,7 @@ module load pytorch/1.11.0/gpu
 
 export PYTHONPATH=/home/ucjtfdd/.python3local/lib/python3.9/site-packages:$PYTHONPATH
 
-python3 bert_large_training_THSK2023.py
+python3 bertweet_training_THSK2023.py
 
-tar zcvf $HOME/Scratch/fk_news_project/bert_large/files_from_job_$JOB_ID.tar.gz $TMPDIR
+tar zcvf $HOME/Scratch/fk_news_project/bertweet_base/files_from_job_$JOB_ID.tar.gz $TMPDIR
 

@@ -22,6 +22,8 @@ module load cuda/11.3.1/gnu-10.2.0
 module load cudnn/8.2.1.32/cuda-11.3
 module load pytorch/1.11.0/gpu
 
+export PYTHONPATH=/home/ucjtfdd/.python3local/lib/python3.9/site-packages:$PYTHONPATH
+
 python3 bert_training_THSK2023.py
 
 tar zcvf $HOME/Scratch/fk_news_project/bert_base/files_from_job_$JOB_ID.tar.gz $TMPDIR
