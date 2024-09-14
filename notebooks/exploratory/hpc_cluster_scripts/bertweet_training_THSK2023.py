@@ -15,10 +15,10 @@ df = pd.read_pickle('processed_tweets_dataset.pkl')
 
 hyperparameters = {
     'model_name': 'bertweet-base',
-    'max_len': 512,
+    'max_len': 130,
     'num_train_epochs': 10,
-    'per_device_train_batch_size': 32,
-    'per_device_eval_batch_size': 32,
+    'per_device_train_batch_size': 1,
+    'per_device_eval_batch_size': 1,
     'learning_rate': 1e-5,
     'weight_decay': 0.0,
     'early_stopping_patience': 3,
