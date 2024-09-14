@@ -14,7 +14,7 @@ distilbert_tokenizer.save_pretrained('./distilbert-base-uncased')
 distilbert_model.save_pretrained('./distilbert-base-uncased')
 
 # Download the BERTweet tokenizer and model
-bertweet_tokenizer = AutoTokenizer.from_pretrained(bertweet_model_name)
+bertweet_tokenizer = AutoTokenizer.from_pretrained(bertweet_model_name, use_fast=False)
 bertweet_model = AutoModelForSequenceClassification.from_pretrained(bertweet_model_name)
 
 # Save the BERTweet tokenizer and model locally

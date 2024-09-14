@@ -64,7 +64,7 @@ class TweetDataset(Dataset):
 
 # Load pre-trained model and tokenizer from local directory
 model_name = f'./{hyperparameters["model_name"]}'
-tokenizer = AutoTokenizer.from_pretrained(model_name)
+tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=False)
 model = AutoModelForSequenceClassification.from_pretrained(model_name)
 
 # Specify the device
